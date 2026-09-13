@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unknown Pleasures Album Cover</title>
+    <style>
+        html, body {
+            height: 100%;
+            height: 100%;
+            margin: 0;
+        }
+
+        .canv_container {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            place-items: center;
+        }
+
+        canvas {
+            display: inline;
+            border: 1px solid black;
+            width: min(100vw, calc(100vh * 3 / 4));
+            aspect-ratio: 3 / 4;
+            height: auto;
+            box-sizing: border-box;
+        }
+    </style>
+    <script type="module" src="draw.js"></script>
+</head>
+<body>
+    <div class="canv_container">
+        <canvas id="album_canvas" width="600" height="800"></canvas>
+    </div>
+</body>
+</html>
