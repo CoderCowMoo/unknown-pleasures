@@ -98,7 +98,7 @@ function perlin1D() {
 }
 
 // lets draw 30 lines right now
-let num_lines = 40;
+let num_lines = 80;
 for (let i = 0; i < num_lines; i++) {
     // starting x is obviously 0, and ending x is canvas.width?
     // convert a range of [0,30], to [canvas.height * 0.2, canvas.height * 0.8]
@@ -113,10 +113,14 @@ for (let i = 0; i < num_lines; i++) {
     const center = gaussianRandom(canvas.width / 5 * 2, 20);
     const center2 = gaussianRandom(canvas.width / 5 * 3, 20);
     const width = Math.max(20, gaussianRandom(60, 10));
+    const width2 = clamp(gaussianRandom(60, 25), 15, 30);
     const height = Math.max(10, gaussianRandom(80, 15));
+    const height2 = clamp(gaussianRandom(40, 15), 10, 90);
     const perlin_noise_1d = perlin1D();
     let lineData = Array.from({length: canvas.width}, (_, x) => {
-        return -peak(x, center, width, height) -peak(x, center2, width, height) + 10 * perlin_noise_1d[x];
+        return -peak(x, center, width, height) 
+               -peak(x, center2, width2, height2) 
+               + 10 * perlin_noise_1d[x];
     });
 
     const startX = canvas.width / 10;
