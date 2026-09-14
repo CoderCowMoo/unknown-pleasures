@@ -40,6 +40,7 @@ function smoothStep(x) {
 
 
 // ----------- INITIALISATION
+// fill canvas with black
 ctx.fillStyle = "black";
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -112,19 +113,41 @@ for (let i = 0; i < num_lines; i++) {
     const center = gaussianRandom(canvas.width / 5 * 2, 20);
     const center2 = gaussianRandom(canvas.width / 5 * 3, 20);
     const width = Math.max(20, gaussianRandom(60, 10));
-    const width2 = Math.max(15, gaussianRandom())
     const height = Math.max(10, gaussianRandom(80, 15));
     const perlin_noise_1d = perlin1D();
-    let line_data = Array.from({length: canvas.width}, (_, x) => {
+    let lineData = Array.from({length: canvas.width}, (_, x) => {
         return -peak(x, center, width, height) -peak(x, center2, width, height) + 10 * perlin_noise_1d[x];
     });
 
-    for (let j = canvas.width / 10; j < canvas.width / 10 * 9; j++) {
-        let yval = line_data[j];
-        ctx.fillStyle = "white";
-        ctx.fillRect(j, y + yval, 1, 1);
-        // fill underneath
-        ctx.fillStyle = "black";
-        ctx.fillRect(j, y + yval + 1, 1, canvas.height - (y + yval + 1));
+    const startX = canvas.width / 10;
+    const endX = canvas.width / 10 * 9;
+
+    // first black mask underneath curve. thanks GPT-5.6 Sol (Medium)
+    ctx.beginPath();
+    ctx.moveTo(startX, y + lineData[startX]);
+
+    for (let x = startX + 1; x < endX; x++) {
+        ctx.lineTo(x, y + lineData[x]);
     }
+
+    ctx.lineTo(endX, canvas.height);
+    ctx.lineTo(startX, canvas.height);
+    ctx.closePath();
+
+    ctx.fillStyle = "black";
+    ctx.fill();
+
+    // now we can draw an antialiased curve.
+    ctx.beginPath();
+    ctx.moveTo(startX, y + lineData[startX]);
+    for (let j = startX + 1; j < endX; j++) {
+        let yval = lineData[j];
+        ctx.lineTo(j, y + yval);
+    }
+
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.stroke();
 }
