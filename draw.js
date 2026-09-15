@@ -10,6 +10,21 @@ let printonce = true;
 // initial approximation? Maybe add some noise?
 
 
+// ---------- SLIDERS (GPT-5.6 Sol (Medium))
+const sliderInputs = document.querySelectorAll(
+    ".sliders input[type='range']"
+);
+
+const settings = {};
+for (const input of sliderInputs) {
+    settings[input.id] = input.valueAsNumber;
+
+    input.addEventListener("input", () => {
+        settings[input.id] = input.valueAsNumber;
+    })
+}
+
+
 // ---------- MATHS FUNCTIONS
 
 // Standard Normal variate using Box-Muller transform.
@@ -97,61 +112,86 @@ function perlin1D() {
     return perlinNoise;
 }
 
-// lets draw 30 lines right now
-let num_lines = 80;
-for (let i = 0; i < num_lines; i++) {
-    // starting x is obviously 0, and ending x is canvas.width?
-    // convert a range of [0,30], to [canvas.height * 0.2, canvas.height * 0.8]
-    let y = (i / num_lines) * (canvas.height * 0.85 - canvas.height * 0.15) + (canvas.height * 0.15);
+// slow down the rendering
+let lastTime = 0;
+const fps = settings.animationFps;
+const fpsInterval = 1000 / fps;
+const num_lines = settings.lineCount;
 
-    // let's find out if I done goofed. YAYYYYY AMAZING
-    // now we need to work on drawing pixels from a line buffer.
-    // https://stackoverflow.com/questions/4899799/whats-the-best-way-to-set-a-single-pixel-in-an-html5-canvas
-    // amazing analysis here, but wow fill rect is faster than image data 1x1 applied multiple times. A smart man would 
-    // be able to use image data easily, for the entire thing, but that man is not me.
-    // line_data will be an array of how many pixels up from y = 0, (or y = y) the line will be
-    const center = gaussianRandom(canvas.width / 5 * 2, 20);
-    const center2 = gaussianRandom(canvas.width / 5 * 3, 20);
-    const width = Math.max(20, gaussianRandom(60, 10));
-    const width2 = clamp(gaussianRandom(60, 25), 15, 30);
-    const height = Math.max(10, gaussianRandom(80, 15));
-    const height2 = clamp(gaussianRandom(40, 15), 10, 90);
-    const perlin_noise_1d = perlin1D();
-    let lineData = Array.from({length: canvas.width}, (_, x) => {
-        return -peak(x, center, width, height) 
-               -peak(x, center2, width2, height2) 
-               + 10 * perlin_noise_1d[x];
-    });
+// calculate the peaks before rendering.
+const center = Array.from({length: num_lines}, () => gaussianRandom(canvas.width / 5 * 2, 20));
+const center2 = Array.from({length: num_lines}, () => gaussianRandom(canvas.width / 5 * 3, 20));
+const width = Array.from({length: num_lines}, () => Math.max(20, gaussianRandom(60, 10)));
+const width2 = Array.from({length: num_lines}, () => clamp(gaussianRandom(60, 25), 15, 30));
+const height = Array.from({length: num_lines}, () => Math.max(10, gaussianRandom(80, 15)));
+const height2 = Array.from({length: num_lines}, () => clamp(gaussianRandom(40, 15), 10, 90));
 
-    const startX = canvas.width / 10;
-    const endX = canvas.width / 10 * 9;
 
-    // first black mask underneath curve. thanks GPT-5.6 Sol (Medium)
-    ctx.beginPath();
-    ctx.moveTo(startX, y + lineData[startX]);
-
-    for (let x = startX + 1; x < endX; x++) {
-        ctx.lineTo(x, y + lineData[x]);
+function render(timestamp = 0) {
+    // drawing logic
+    requestAnimationFrame(render);
+    const elapsed = timestamp - lastTime;
+    if (elapsed <= fpsInterval) {
+        return;
     }
 
-    ctx.lineTo(endX, canvas.height);
-    ctx.lineTo(startX, canvas.height);
-    ctx.closePath();
-
+    lastTime = timestamp - (elapsed % fpsInterval);
+    // clear screen
     ctx.fillStyle = "black";
-    ctx.fill();
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // now we can draw an antialiased curve.
-    ctx.beginPath();
-    ctx.moveTo(startX, y + lineData[startX]);
-    for (let j = startX + 1; j < endX; j++) {
-        let yval = lineData[j];
-        ctx.lineTo(j, y + yval);
+    // draw the lines
+    for (let i = 0; i < num_lines; i++) {
+        // starting x is obviously 0, and ending x is canvas.width?
+        // convert a range of [0,30], to [canvas.height * 0.2, canvas.height * 0.8]
+        let y = (i / num_lines) * (canvas.height * 0.85 - canvas.height * 0.15) + (canvas.height * 0.15);
+
+        // let's find out if I done goofed. YAYYYYY AMAZING
+        // now we need to work on drawing pixels from a line buffer.
+        // https://stackoverflow.com/questions/4899799/whats-the-best-way-to-set-a-single-pixel-in-an-html5-canvas
+        // amazing analysis here, but wow fill rect is faster than image data 1x1 applied multiple times. A smart man would 
+        // be able to use image data easily, for the entire thing, but that man is not me.
+        // line_data will be an array of how many pixels up from y = 0, (or y = y) the line will be
+        
+        const perlin_noise_1d = perlin1D();
+        let lineData = Array.from({length: canvas.width}, (_, x) => {
+            return -peak(x, center[i], width[i], height[i]) 
+                   -peak(x, center2[i], width2[i], height2[i]) 
+                   + settings.noiseStrength * perlin_noise_1d[x];
+        });
+
+        const startX = canvas.width / 10;
+        const endX = canvas.width / 10 * 9;
+
+        // first black mask underneath curve. thanks GPT-5.6 Sol (Medium)
+        ctx.beginPath();
+        ctx.moveTo(startX, y + lineData[startX]);
+
+        for (let x = startX + 1; x < endX; x++) {
+            ctx.lineTo(x, y + lineData[x]);
+        }
+
+        ctx.lineTo(endX, canvas.height);
+        ctx.lineTo(startX, canvas.height);
+        ctx.closePath();
+
+        ctx.fillStyle = "black";
+        ctx.fill();
+
+        // now we can draw an antialiased curve.
+        ctx.beginPath();
+        ctx.moveTo(startX, y + lineData[startX]);
+        for (let j = startX + 1; j < endX; j++) {
+            let yval = lineData[j];
+            ctx.lineTo(j, y + yval);
+        }
+
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 2;
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+        ctx.stroke();
     }
-
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 2;
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
-    ctx.stroke();
 }
+
+requestAnimationFrame(render);
