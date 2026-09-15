@@ -7,6 +7,3 @@ A better implementation is [dvida's](https://github.com/dvida/UnknownPleasuresGe
 The link to the web page should be on the right hand side of the github UI.
 
 ![image of the generator's webpage.](imgs/unknown.png)
-
-
-Resources used to create this project:
