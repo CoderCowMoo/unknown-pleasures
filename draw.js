@@ -21,7 +21,32 @@ for (const input of sliderInputs) {
 
     input.addEventListener("input", () => {
         settings[input.id] = input.valueAsNumber;
+        // GPT-5.6 Sol (Medium) this is dumb as hell the code it gives me
+        input.nextElementSibling.textContent = input.value;
+        handleSettingsChange(input.id);
     })
+}
+
+const lineGenerationSettings = new Set([
+    "lineCount",
+    "peakOneCenter",
+    "peakOneCenterDeviation",
+    "peakOneWidth",
+    "peakOneWidthDeviation",
+    "peakOneHeight",
+    "peakOneHeightDeviation",
+    "peakTwoCenter",
+    "peakTwoCenterDeviation",
+    "peakTwoWidth",
+    "peakTwoWidthDeviation",
+    "peakTwoHeight",
+    "peakTwoHeightDeviation"
+]);
+
+function handleSettingsChange(id) {
+    if (lineGenerationSettings.has(id)) {
+        generateLines();
+    }
 }
 
 
@@ -114,21 +139,41 @@ function perlin1D() {
 
 // slow down the rendering
 let lastTime = 0;
-const fps = settings.animationFps;
-const fpsInterval = 1000 / fps;
-const num_lines = settings.lineCount;
+
+// each line has random values
+let lines = [];
+
+function generateLines() {
+    lines = Array.from({ length: settings.lineCount }, () => ({
+        peakOne: {
+            center: gaussianRandom(settings.peakOneCenter, settings.peakOneCenterDeviation),
+            width: gaussianRandom(settings.peakOneWidth, settings.peakOneWidthDeviation),
+            height: gaussianRandom(settings.peakOneHeight, settings.peakOneHeightDeviation)
+        },
+        peakTwo: {
+            center: gaussianRandom(settings.peakTwoCenter, settings.peakTwoCenterDeviation),
+            width: gaussianRandom(settings.peakTwoWidth, settings.peakTwoWidthDeviation),
+            height: gaussianRandom(settings.peakTwoHeight, settings.peakTwoHeightDeviation)
+        },
+
+    }));
+}
+
+generateLines();
 
 // calculate the peaks before rendering.
-const center = Array.from({length: num_lines}, () => gaussianRandom(canvas.width / 5 * 2, 20));
-const center2 = Array.from({length: num_lines}, () => gaussianRandom(canvas.width / 5 * 3, 20));
-const width = Array.from({length: num_lines}, () => Math.max(20, gaussianRandom(60, 10)));
-const width2 = Array.from({length: num_lines}, () => clamp(gaussianRandom(60, 25), 15, 30));
-const height = Array.from({length: num_lines}, () => Math.max(10, gaussianRandom(80, 15)));
-const height2 = Array.from({length: num_lines}, () => clamp(gaussianRandom(40, 15), 10, 90));
+const center = Array.from({length: settings.lineCount}, () => gaussianRandom(canvas.width / 5 * 2, 20));
+const center2 = Array.from({length: settings.lineCount}, () => gaussianRandom(canvas.width / 5 * 3, 20));
+const width = Array.from({length: settings.lineCount}, () => Math.max(20, gaussianRandom(60, 10)));
+const width2 = Array.from({length: settings.lineCount}, () => clamp(gaussianRandom(60, 25), 15, 30));
+const height = Array.from({length: settings.lineCount}, () => Math.max(10, gaussianRandom(80, 15)));
+const height2 = Array.from({length: settings.lineCount}, () => clamp(gaussianRandom(40, 15), 10, 90));
 
 
 function render(timestamp = 0) {
     // drawing logic
+    const fps = settings.animationFps;
+    const fpsInterval = 1000 / fps;
     requestAnimationFrame(render);
     const elapsed = timestamp - lastTime;
     if (elapsed <= fpsInterval) {
@@ -141,11 +186,11 @@ function render(timestamp = 0) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // draw the lines
-    for (let i = 0; i < num_lines; i++) {
+    for (let i = 0; i < settings.lineCount; i++) {
         // starting x is obviously 0, and ending x is canvas.width?
         // convert a range of [0,30], to [canvas.height * 0.2, canvas.height * 0.8]
-        let y = (i / num_lines) * (canvas.height * 0.85 - canvas.height * 0.15) + (canvas.height * 0.15);
-
+        let y = (i / settings.lineCount) * (canvas.height * 0.85 - canvas.height * 0.15) + (canvas.height * 0.15);
+        
         // let's find out if I done goofed. YAYYYYY AMAZING
         // now we need to work on drawing pixels from a line buffer.
         // https://stackoverflow.com/questions/4899799/whats-the-best-way-to-set-a-single-pixel-in-an-html5-canvas
@@ -154,19 +199,31 @@ function render(timestamp = 0) {
         // line_data will be an array of how many pixels up from y = 0, (or y = y) the line will be
         
         const perlin_noise_1d = perlin1D();
+        const line = lines[i]
+        
         let lineData = Array.from({length: canvas.width}, (_, x) => {
-            return -peak(x, center[i], width[i], height[i]) 
-                   -peak(x, center2[i], width2[i], height2[i]) 
-                   + settings.noiseStrength * perlin_noise_1d[x];
+            const firstPeak = peak(
+                x,
+                line.peakOne.center,
+                line.peakOne.width,
+                line.peakOne.height
+            );
+            const secondPeak = peak(
+                x,
+                line.peakTwo.center,
+                line.peakTwo.width,
+                line.peakTwo.height
+            );
+            return -firstPeak -secondPeak + settings.noiseStrength * perlin_noise_1d[x];
         });
-
+        
         const startX = canvas.width / 10;
         const endX = canvas.width / 10 * 9;
-
+        
         // first black mask underneath curve. thanks GPT-5.6 Sol (Medium)
         ctx.beginPath();
         ctx.moveTo(startX, y + lineData[startX]);
-
+        
         for (let x = startX + 1; x < endX; x++) {
             ctx.lineTo(x, y + lineData[x]);
         }
