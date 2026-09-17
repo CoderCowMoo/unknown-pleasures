@@ -1,6 +1,6 @@
 // @ts-check
 
-import { createProceduralRenderer } from "./renderers/procedural.js";
+import { createProceduralRenderer, proceduralDefinition } from "./renderers/procedural.js";
 import { setupControls } from "./controls.js";
 
 
@@ -33,9 +33,12 @@ const {
     globalSettings,
     rendererSettings
     // @ts-ignore
-} = setupControls(({scope, id}) => {
-    activeRenderer?.settingsChanged(scope, id);
-});
+} = setupControls(
+    proceduralDefinition.controls,    
+    ({scope, id}) => {
+        activeRenderer?.settingsChanged(scope, id);
+    }
+);
 
 // setup the procedural renderer by default
 activeRenderer = createProceduralRenderer(
