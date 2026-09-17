@@ -122,7 +122,5 @@ export const proceduralDefinition = {
             step: 1,
             defaultValue: 4
         }
-    ],
-
-    create: createProceduralRenderer
+    ]
 }

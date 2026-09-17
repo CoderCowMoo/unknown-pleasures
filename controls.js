@@ -61,6 +61,8 @@ function generateHTMLSettings(controls) {
 }
 
 
+
+
 export function setupControls(rendererControls, onChange) {
     // generate the html
     generateHTMLSettings(rendererControls);
@@ -106,4 +108,8 @@ export function setupControls(rendererControls, onChange) {
         globalSettings,
         rendererSettings
     };
+}
+
+export function setupRendererRadio() {
+
 }

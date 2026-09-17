@@ -1,8 +1,10 @@
 // @ts-check
 
 import { createProceduralRenderer } from "./renderers/procedural.js";
+import { createAudioVisualRenderer } from "./renderers/audiovis.js";
 import { proceduralDefinition } from "./renderers/render_settings/proceduralsettings.js";
-import { setupControls } from "./controls.js";
+import { audiovisDefinition } from "./renderers/render_settings/audiovissettings.js";
+import { setupControls, setupRendererRadio } from "./controls.js";
 
 
 // https://stackoverflow.com/questions/63970910/vscode-intellisense-for-javascript-not-working-for-canvas-element
@@ -35,7 +37,8 @@ const {
     rendererSettings
     // @ts-ignore
 } = setupControls(
-    proceduralDefinition.controls,    
+    proceduralDefinition.controls,
+    // @ts-ignore
     ({scope, id}) => {
         activeRenderer?.settingsChanged(scope, id);
     }
@@ -50,6 +53,65 @@ activeRenderer = createProceduralRenderer(
 )
 
 activeRenderer.initialise();
+
+// attach the listener to the renderer radio.
+const rendererRadioDiv = document.getElementById("rendererSelection");
+if (!(rendererRadioDiv instanceof HTMLDivElement)) {
+    throw new Error("rendererSelection div not access properly. for some reason.");
+}
+// i Keep fricking trying to think of the best abstraction to make it all easy
+// I need to just crack on.
+rendererRadioDiv.addEventListener("change", (event) => {
+    if (!(event.target instanceof HTMLInputElement)) {
+        throw new Error("There's something other than a radio input\
+             that send a change event in rendererSelection, check ts out");
+    }
+
+    if (event.target.value === "procedural") {
+        const {
+            globalSettings,
+            rendererSettings
+            // @ts-ignore
+        } = setupControls(
+            proceduralDefinition.controls,
+            // @ts-ignore
+            ({scope, id}) => {
+                activeRenderer?.settingsChanged(scope, id);
+            }
+        );
+
+        // setup the procedural renderer by default
+        activeRenderer = createProceduralRenderer(
+            canvas,
+            globalSettings,
+            // @ts-ignore
+            rendererSettings
+        );
+
+        activeRenderer.initialise();
+    }
+    else if (event.target.value === "audio") {
+        // fear not because this doesn't change anything yet I think.
+        const {
+            globalSettings,
+            rendererSettings
+        } = setupControls(
+            audiovisDefinition.controls,
+            // @ts-ignore
+            ({scope, id}) => {
+                activeRenderer?.settingsChanged(scope, id);
+            }
+        )
+
+        activeRenderer = createAudioVisualRenderer(
+            canvas,
+            globalSettings,
+            rendererSettings
+        );
+
+        activeRenderer.initialise();
+    }
+});
 
 // ----------- DRAWING
 let lastTime = 0;
