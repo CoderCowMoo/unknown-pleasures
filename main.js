@@ -1,6 +1,7 @@
 // @ts-check
 
-import { createProceduralRenderer, proceduralDefinition } from "./renderers/procedural.js";
+import { createProceduralRenderer } from "./renderers/procedural.js";
+import { proceduralDefinition } from "./renderers/render_settings/proceduralsettings.js";
 import { setupControls } from "./controls.js";
 
 
