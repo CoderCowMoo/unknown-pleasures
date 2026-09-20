@@ -28,6 +28,9 @@ function generateHTMLSettings(controls) {
     const tree = document.createDocumentFragment();
 
     for (const control of controls) {
+        const option = document.createElement("div");
+        option.className = "settingControl";
+        
         // add the label. how you may ask?
         // https://stackoverflow.com/questions/5536596/dynamically-creating-html-elements-using-javascript
         const label = document.createElement("label");
@@ -35,7 +38,7 @@ function generateHTMLSettings(controls) {
         // https://stackoverflow.com/questions/35213147/difference-between-textcontent-vs-innertext
         // https://kellegous.com/j/2013/02/27/innertext-vs-textcontent/
         label.textContent = control.label;
-        tree.appendChild(label);
+        option.appendChild(label);
 
         const input = document.createElement("input");
         input.setAttribute("type", control.type);
@@ -44,70 +47,74 @@ function generateHTMLSettings(controls) {
         input.setAttribute("max", control.max);
         input.setAttribute("step", control.step);
         input.setAttribute("value", control.defaultValue);
-        tree.appendChild(input);
+        option.appendChild(input);
 
         // only add a value span afterwards if its a slider
         if (control.type == "range") {
             const value = document.createElement("span");
             value.className = "sliderValue";
             value.textContent = control.defaultValue.toString();
-            tree.appendChild(value);
+            option.appendChild(value);
         }
 
-        tree.append(document.createElement("br"));
+        tree.appendChild(option);
     }
 
     container.replaceChildren(tree);
 }
 
+// now bind the inputs after this function.
+function bindInputs(selector, target, scope, onChange) {
+    const inputs = document.querySelectorAll(
+        `${selector} input[type="range"]`
+    );
 
-
-
-export function setupControls(rendererControls, onChange) {
-    // generate the html
-    generateHTMLSettings(rendererControls);
-
-    // now bind the inputs after this function.
-    function bindInputs(selector, target, scope) {
-        const inputs = document.querySelectorAll(
-            `${selector} input[type="range"]`
-        );
-
-        for (const element of inputs) {
-            // skip the labels or whatever have you
-            if (!(element instanceof HTMLInputElement)) {
-                continue;
-            }
-            
-            target[element.id] = element.valueAsNumber;
-
-            // if it changes, change the label next to it.
-            element.addEventListener("input", () => {
-                target[element.id] = element.valueAsNumber;
-                element.nextElementSibling.textContent = element.value;
-
-                onChange({
-                    scope,
-                    id: element.id,
-                    value: element.valueAsNumber
-                });
-            })
+    for (const element of inputs) {
+        // skip the labels or whatever have you
+        if (!(element instanceof HTMLInputElement)) {
+            continue;
         }
-    }
+        
+        target[element.id] = element.valueAsNumber;
 
+        // if it changes, change the label next to it.
+        element.addEventListener("input", () => {
+            target[element.id] = element.valueAsNumber;
+            element.nextElementSibling.textContent = element.value;
+
+            onChange({
+                scope,
+                id: element.id,
+                value: element.valueAsNumber
+            });
+        })
+    }
+}
+
+export function setupGlobalControls(onChange) {
     /** @type {GlobalSettings} */
     const globalSettings = {};
+
+    bindInputs(
+        ".globalSettings",
+        globalSettings,
+        "global",
+        onChange
+    );
+
+    return globalSettings;
+}
+
+export function setupRendererControls(rendererControls, onChange) {
+    // generate the html
+    generateHTMLSettings(rendererControls);
 
     /** @type {Record<string, number>} */
     const rendererSettings = {};
 
-    bindInputs(".globalSettings", globalSettings, "global");
-    bindInputs(".rendererSettings", rendererSettings, "renderer");
+    bindInputs(".rendererSettings", rendererSettings, "renderer", onChange);
 
-    return {
-        globalSettings,
-        rendererSettings
-    };
+    return rendererSettings;
 }
 
 export function setupRendererRadio() {

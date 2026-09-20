@@ -93,9 +93,14 @@ export function createAudioVisualRenderer(canvas, globalSettings, rendererSettin
         }
     }
 
+    function destroy() {
+        // for now do nothing, but soon, free the listening object.
+    }
+
     return {
         initialise,
         render,
-        settingsChanged
+        settingsChanged,
+        destroy
     };
 }

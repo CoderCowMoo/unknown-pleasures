@@ -140,9 +140,15 @@ export function createProceduralRenderer(canvas, globalSettings, rendererSetting
         }
     }
 
+    function destroy() {
+        // don't need to unalloc or do anything.
+        return;
+    }
+
     return {
         initialise,
         render,
-        settingsChanged
+        settingsChanged,
+        destroy
     };
 }

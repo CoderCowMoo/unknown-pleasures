@@ -4,7 +4,7 @@ import { createProceduralRenderer } from "./renderers/procedural.js";
 import { createAudioVisualRenderer } from "./renderers/audiovis.js";
 import { proceduralDefinition } from "./renderers/render_settings/proceduralsettings.js";
 import { audiovisDefinition } from "./renderers/render_settings/audiovissettings.js";
-import { setupControls, setupRendererRadio } from "./controls.js";
+import { setupGlobalControls, setupRendererControls, setupRendererRadio } from "./controls.js";
 
 
 // https://stackoverflow.com/questions/63970910/vscode-intellisense-for-javascript-not-working-for-canvas-element
@@ -28,20 +28,20 @@ ctx.fillRect(0, 0, canvas.width, canvas.height);
 // ----------- RENDERER INIT
 // @ts-ignore
 /**
- * @type {{ settingsChanged: function; initialise: function; render: function; }}
+ * @type {{ settingsChanged: function; initialise: function; render: function; destroy: function; }}
  */
 let activeRenderer;
 
-const {
-    globalSettings,
-    rendererSettings
-    // @ts-ignore
-} = setupControls(
+// @ts-ignore
+const notifySettingsChange = ({scope, id}) => {
+    activeRenderer?.settingsChanged(scope, id);
+}
+
+const globalSettings = setupGlobalControls(notifySettingsChange);
+
+let rendererSettings = setupRendererControls(
     proceduralDefinition.controls,
-    // @ts-ignore
-    ({scope, id}) => {
-        activeRenderer?.settingsChanged(scope, id);
-    }
+    notifySettingsChange
 );
 
 // setup the procedural renderer by default
@@ -67,17 +67,14 @@ rendererRadioDiv.addEventListener("change", (event) => {
              that send a change event in rendererSelection, check ts out");
     }
 
+    activeRenderer?.destroy?.();
+
     if (event.target.value === "procedural") {
-        const {
-            globalSettings,
-            rendererSettings
-            // @ts-ignore
-        } = setupControls(
+        
+        // create rendererSettings
+        rendererSettings = setupRendererControls(
             proceduralDefinition.controls,
-            // @ts-ignore
-            ({scope, id}) => {
-                activeRenderer?.settingsChanged(scope, id);
-            }
+            notifySettingsChange
         );
 
         // setup the procedural renderer by default
@@ -92,16 +89,10 @@ rendererRadioDiv.addEventListener("change", (event) => {
     }
     else if (event.target.value === "audio") {
         // fear not because this doesn't change anything yet I think.
-        const {
-            globalSettings,
-            rendererSettings
-        } = setupControls(
+        rendererSettings = setupRendererControls(
             audiovisDefinition.controls,
-            // @ts-ignore
-            ({scope, id}) => {
-                activeRenderer?.settingsChanged(scope, id);
-            }
-        )
+            notifySettingsChange
+        );
 
         activeRenderer = createAudioVisualRenderer(
             canvas,

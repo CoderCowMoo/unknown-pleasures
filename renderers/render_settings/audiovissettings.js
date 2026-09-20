@@ -11,5 +11,11 @@ export const audiovisDefinition = {
             // lets see if SHTF if no min, max, step exist
             defaultValue: "Test worked!!!!"
         },
+        {
+            id: "mic_button",
+            label: "Microphone: ",
+            type: "button",
+            defaultValue: "Start listening"
+        }
     ]
 }
