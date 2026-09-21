@@ -74,7 +74,9 @@ rendererRadioDiv.addEventListener("change", (event) => {
         // create rendererSettings
         rendererSettings = setupRendererControls(
             proceduralDefinition.controls,
-            notifySettingsChange
+            notifySettingsChange,
+            // we don't need to do anything here.
+            () => {return;}
         );
 
         // setup the procedural renderer by default
@@ -91,7 +93,8 @@ rendererRadioDiv.addEventListener("change", (event) => {
         // fear not because this doesn't change anything yet I think.
         rendererSettings = setupRendererControls(
             audiovisDefinition.controls,
-            notifySettingsChange
+            notifySettingsChange,
+            micAction
         );
 
         activeRenderer = createAudioVisualRenderer(

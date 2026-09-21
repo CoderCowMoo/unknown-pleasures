@@ -91,6 +91,35 @@ function bindInputs(selector, target, scope, onChange) {
     }
 }
 
+function bindActions(selector, onAction) {
+    const buttons = document.querySelectorAll(
+        `${selector} button`
+    );
+
+    for (const element of buttons) {
+        if (!(element instanceof HTMLButtonElement)) {
+            // abnormal
+            continue;
+        }
+
+        // on click, call the onAction which should return a
+        // string indicating the new text.
+        element.addEventListener("click", async () => {
+            element.disabled = true;
+
+            try {
+                const nextLabel = await onAction(element.id);
+
+                if (typeof nextLabel === "string") {
+                    element.textContent = nextLabel;
+                }
+            } finally {
+                element.disabled = false;
+            }
+        });
+    }
+}
+
 export function setupGlobalControls(onChange) {
     /** @type {GlobalSettings} */
     const globalSettings = {};
@@ -105,7 +134,7 @@ export function setupGlobalControls(onChange) {
     return globalSettings;
 }
 
-export function setupRendererControls(rendererControls, onChange) {
+export function setupRendererControls(rendererControls, onChange, onAction) {
     // generate the html
     generateHTMLSettings(rendererControls);
 
@@ -113,6 +142,7 @@ export function setupRendererControls(rendererControls, onChange) {
     const rendererSettings = {};
 
     bindInputs(".rendererSettings", rendererSettings, "renderer", onChange);
+    bindActions(".rendererSettings", onAction);
 
     return rendererSettings;
 }

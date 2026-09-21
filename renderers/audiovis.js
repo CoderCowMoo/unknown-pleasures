@@ -8,6 +8,25 @@
  */
 export function createAudioVisualRenderer(canvas, globalSettings, rendererSettings) {
 
+    /**
+     * @type {MediaStream | null}
+     */
+    let mediaStream = null;
+    /**
+     * @type {AudioContext | null}
+     */
+    let audioContext = null;
+    /**
+     * @type {MediaStreamAudioSourceNode | null}
+     */
+    let source = null;
+    /**
+     * @type {AudioNode | null}
+     */
+    let analyser = null;
+
+
+
     const possibleContext = canvas.getContext("2d");
     if (possibleContext === null) {
         throw new Error("Could not create procedural renderer context");
@@ -27,7 +46,18 @@ export function createAudioVisualRenderer(canvas, globalSettings, rendererSettin
         })
     }
 
-    function initialise() {
+    async function initialise() {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+            audio: true
+        });
+
+        audioContext = new AudioContext();
+        await audioContext.resume();
+
+        analyser = audioContext.createAnalyser();
+        source = audioContext.createMediaStreamSource(mediaStream);
+        source.connect(analyser);
+
         generateLines();
     }
 
@@ -93,8 +123,22 @@ export function createAudioVisualRenderer(canvas, globalSettings, rendererSettin
         }
     }
 
-    function destroy() {
-        // for now do nothing, but soon, free the listening object.
+    async function destroy() {
+        for (const track of mediaStream?.getTracks() ?? []) {
+            track.stop();
+        }
+
+        source?.disconnect();
+        analyser?.disconnect();
+
+        if (audioContext?.state !== "closed") {
+            await audioContext?.close();
+        }
+
+        mediaStream = null;
+        source = null;
+        analyser = null;
+        audioContext = null;
     }
 
     return {
