@@ -47,9 +47,19 @@ export function createAudioVisualRenderer(canvas, globalSettings, rendererSettin
     }
 
     async function initialise() {
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-            audio: true
-        });
+        try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({
+                audio: true
+            });
+        } catch (e) {
+            const errorMsg = document.createElement("div");
+            errorMsg.innerText = "Couldn't read your mic mate, sorry, you musta refused the permission? Try giving the permission in your browser settings.";
+            errorMsg.style.fontSize = "35";
+            errorMsg.style.color = "red";
+            errorMsg.style.margin = "5px";
+            document.body.append(errorMsg);
+            throw new Error("User refused mic perms, can't do nuthin boss");
+        }
 
         audioContext = new AudioContext();
         await audioContext.resume();

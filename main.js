@@ -93,8 +93,7 @@ rendererRadioDiv.addEventListener("change", (event) => {
         // fear not because this doesn't change anything yet I think.
         rendererSettings = setupRendererControls(
             audiovisDefinition.controls,
-            notifySettingsChange,
-            micAction
+            notifySettingsChange
         );
 
         activeRenderer = createAudioVisualRenderer(
