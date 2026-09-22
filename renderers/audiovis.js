@@ -8,6 +8,9 @@
  */
 export function createAudioVisualRenderer(canvas, globalSettings, rendererSettings) {
 
+    const startX = canvas.width / 10;
+            const endX = canvas.width / 10 * 9;
+
     /**
      * @type {MediaStream | null}
      */
@@ -34,7 +37,7 @@ export function createAudioVisualRenderer(canvas, globalSettings, rendererSettin
     const ctx = possibleContext;
     
     /**
-     * @type {number[]}
+     * @type {number[][]}
      */
     let lines = [];
 
@@ -42,11 +45,13 @@ export function createAudioVisualRenderer(canvas, globalSettings, rendererSettin
         lines = Array.from({ length: globalSettings.lineCount }, () => {
             // here is where the frequency over time data should be added
             // to the lines. I think?
-            return 0;
+            return Array.from({ length: endX }, () => 0);
         })
     }
 
     async function initialise() {
+        generateLines();
+        
         try {
             mediaStream = await navigator.mediaDevices.getUserMedia({
                 audio: true
@@ -67,8 +72,6 @@ export function createAudioVisualRenderer(canvas, globalSettings, rendererSettin
         analyser = audioContext.createAnalyser();
         source = audioContext.createMediaStreamSource(mediaStream);
         source.connect(analyser);
-
-        generateLines();
     }
 
     function render() {
@@ -84,19 +87,12 @@ export function createAudioVisualRenderer(canvas, globalSettings, rendererSettin
             
             const line = lines[i]
             
-            let lineData = Array.from({length: canvas.width}, (_, x) => {
-                return x / 5;
-            });
-            
-            const startX = canvas.width / 10;
-            const endX = canvas.width / 10 * 9;
-            
             // first black mask underneath curve. thanks GPT-5.6 Sol (Medium)
             ctx.beginPath();
-            ctx.moveTo(startX, y + lineData[startX]);
+            ctx.moveTo(startX, y + line[startX]);
             
             for (let x = startX + 1; x < endX; x++) {
-                ctx.lineTo(x, y + lineData[x]);
+                ctx.lineTo(x, y + line[x]);
             }
 
             ctx.lineTo(endX, canvas.height);
@@ -108,9 +104,9 @@ export function createAudioVisualRenderer(canvas, globalSettings, rendererSettin
 
             // now we can draw an antialiased curve.
             ctx.beginPath();
-            ctx.moveTo(startX, y + lineData[startX]);
+            ctx.moveTo(startX, y + line[startX]);
             for (let j = startX + 1; j < endX; j++) {
-                let yval = lineData[j];
+                let yval = line[j];
                 ctx.lineTo(j, y + yval);
             }
 

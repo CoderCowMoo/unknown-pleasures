@@ -40,6 +40,9 @@ function generateHTMLSettings(controls) {
         label.textContent = control.label;
         option.appendChild(label);
 
+        const inputdiv = document.createElement("div");
+        inputdiv.className = "settingInput";
+
         const input = document.createElement("input");
         input.setAttribute("type", control.type);
         input.setAttribute("id", control.id);
@@ -47,16 +50,17 @@ function generateHTMLSettings(controls) {
         input.setAttribute("max", control.max);
         input.setAttribute("step", control.step);
         input.setAttribute("value", control.defaultValue);
-        option.appendChild(input);
+        inputdiv.appendChild(input);
 
         // only add a value span afterwards if its a slider
         if (control.type == "range") {
             const value = document.createElement("span");
             value.className = "sliderValue";
             value.textContent = control.defaultValue.toString();
-            option.appendChild(value);
+            inputdiv.appendChild(value);
         }
 
+        option.append(inputdiv);
         tree.appendChild(option);
     }
 
