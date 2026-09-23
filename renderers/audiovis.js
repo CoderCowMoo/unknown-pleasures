@@ -9,33 +9,36 @@
 export function createAudioVisualRenderer(canvas, globalSettings, rendererSettings) {
 
     const startX = canvas.width / 10;
-            const endX = canvas.width / 10 * 9;
-
+    const endX = canvas.width / 10 * 9;
+    
     /**
      * @type {MediaStream | null}
-     */
-    let mediaStream = null;
-    /**
-     * @type {AudioContext | null}
-     */
-    let audioContext = null;
-    /**
-     * @type {MediaStreamAudioSourceNode | null}
-     */
-    let source = null;
-    /**
-     * @type {AudioNode | null}
-     */
-    let analyser = null;
+    */
+   let mediaStream = null;
+   /**
+    * @type {AudioContext | null}
+   */
+  let audioContext = null;
+  /**
+   * @type {MediaStreamAudioSourceNode | null}
+  */
+ let source = null;
+ /**
+  * @type {AnalyserNode | null}
+ */
+let analyser = null;
 
 
 
-    const possibleContext = canvas.getContext("2d");
-    if (possibleContext === null) {
-        throw new Error("Could not create procedural renderer context");
-    }
-    const ctx = possibleContext;
-    
+const possibleContext = canvas.getContext("2d");
+if (possibleContext === null) {
+    throw new Error("Could not create procedural renderer context");
+}
+const ctx = possibleContext;
+
+/** @type {Uint8Array | null} */
+let dataArray = null;
+
     /**
      * @type {number[][]}
      */
@@ -43,15 +46,13 @@ export function createAudioVisualRenderer(canvas, globalSettings, rendererSettin
 
     function generateLines() {
         lines = Array.from({ length: globalSettings.lineCount }, () => {
-            // here is where the frequency over time data should be added
-            // to the lines. I think?
-            return Array.from({ length: endX }, () => 0);
+            return Array.from({ length: canvas.width }, () => 0);
         })
     }
 
     async function initialise() {
         generateLines();
-        
+
         try {
             mediaStream = await navigator.mediaDevices.getUserMedia({
                 audio: true
@@ -72,12 +73,60 @@ export function createAudioVisualRenderer(canvas, globalSettings, rendererSettin
         analyser = audioContext.createAnalyser();
         source = audioContext.createMediaStreamSource(mediaStream);
         source.connect(analyser);
+
+        dataArray = new Uint8Array(analyser.frequencyBinCount)
+
     }
 
-    function render() {
+    /**
+     * @param {number} timestamp
+     */
+    function render(timestamp) {
         // clear screen
         ctx.fillStyle = "black";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // antinull field
+        if (analyser === null || dataArray === null) {
+            return;
+        }
+
+        // interesting data is only in the first half of dataArray.
+        // @ts-ignore
+        analyser.getByteFrequencyData(dataArray);
+        
+        // let's shift the data in the lines by 1 to the left.
+        for (let i = startX; i < endX; i++) {
+            if (i == endX - 1) {
+
+            }
+            for (const line of lines) {
+                line[i] = line[i + 1];
+            }
+        }
+
+        // now we'll assign the frequencies to the end of each line.
+        let downSample = Array.from({length: globalSettings.lineCount}, () => 0);
+        //      we want to downsample from analyser.freqbincount to linecount
+        const pointsPer = Math.trunc((dataArray.length - 400) / globalSettings.lineCount);
+        let currPoints = 0;
+        let currIndex = 0;
+        for (let i = 0; i < (dataArray.length - 400); i++) {
+            if (currPoints == pointsPer) {
+                // avg
+                downSample[currIndex] /= pointsPer;
+                currIndex++;
+                currPoints = 0;
+            }
+            // sum
+            downSample[currIndex] += dataArray[i];
+            currPoints++;
+        }
+
+        for (let i = 0; i < lines.length; i++) {
+            lines[i][endX] = downSample[i];
+        }
+
 
         // draw the lines
         for (let i = 0; i < globalSettings.lineCount; i++) {
@@ -87,6 +136,11 @@ export function createAudioVisualRenderer(canvas, globalSettings, rendererSettin
             
             const line = lines[i]
             
+            // ok we need to downsample 1024 signal points into endX points.
+            // we can do that by averaging the result into each point.
+            // NEVERMIND BECAUSE MOST OF THE TIME ENDX IS 1080 WHICH IS MORE!!!!
+            // ok we'll just use the 1024 ig.
+
             // first black mask underneath curve. thanks GPT-5.6 Sol (Medium)
             ctx.beginPath();
             ctx.moveTo(startX, y + line[startX]);

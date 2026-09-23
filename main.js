@@ -123,7 +123,7 @@ function render(timestamp) {
     }
     // forgot where this needs to go.
 
-    activeRenderer.render();
+    activeRenderer.render(timestamp);
 
     lastTime = timestamp - (elapsed % fpsInterval);
 }
