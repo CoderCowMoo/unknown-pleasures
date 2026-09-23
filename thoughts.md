@@ -16,3 +16,5 @@ function smooth(x, target) {
 Best i got before asking codex.
 
 Alright you're up to adding sliders to change settings in real time as you view the page. Perlin noise strength changing is done, but you need to handle the settings that change the line generation, because you're technically
+
+There's better ways I could have done the settings for each implementation to allow for different input types, but special support for just range and button types is ok.
