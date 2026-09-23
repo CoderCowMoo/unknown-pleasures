@@ -181,7 +181,7 @@ let dataArray = null;
             ctx.beginPath();
             ctx.moveTo(startX, y + line[startX]);
             for (let j = startX + 1; j < endX; j++) {
-                let yval = line[j];
+                let yval = -line[j] * 0.7;
                 ctx.lineTo(j, y + yval);
             }
 

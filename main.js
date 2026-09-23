@@ -117,7 +117,7 @@ rendererRadioDiv.addEventListener("change", (event) => {
         
         // change line count and animationfps to better default
         setRangeValue("animationFps", 60);
-        setRangeValue("lineCount", 14);
+        setRangeValue("lineCount", 20);
 
         activeRenderer = createAudioVisualRenderer(
             canvas,

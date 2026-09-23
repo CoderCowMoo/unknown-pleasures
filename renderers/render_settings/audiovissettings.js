@@ -8,7 +8,7 @@ export const audiovisDefinition = {
             id: "scrollSpeed",
             label: "Scroll speed (px per second): ",
             type: "range",
-            defaultValue: "20",
+            defaultValue: "80",
             min: "3",
             max: "100"
         }
