@@ -78,10 +78,18 @@ let dataArray = null;
 
     }
 
+
+    /**
+     * @type {number | null}
+     */
+    let previousTimeStamp = null;
+    let scrollCarry = 0;
+
     /**
      * @param {number} timestamp
      */
     function render(timestamp) {
+
         // clear screen
         ctx.fillStyle = "black";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -91,27 +99,36 @@ let dataArray = null;
             return;
         }
 
+        // calc the delta
+        if (previousTimeStamp === null) {
+            previousTimeStamp = timestamp;
+        }
+        
+        const deltaSeconds = (timestamp - previousTimeStamp) / 1000;
+        previousTimeStamp = timestamp;
+
+        const exactMovement = rendererSettings.scrollSpeed * deltaSeconds + scrollCarry;
+        const scrollPixels = Math.floor(exactMovement);
+
+        scrollCarry = exactMovement - scrollPixels;
         // interesting data is only in the first half of dataArray.
         // @ts-ignore
         analyser.getByteFrequencyData(dataArray);
         
         // let's shift the data in the lines by 1 to the left.
-        for (let i = startX; i < endX; i++) {
-            if (i == endX - 1) {
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
 
-            }
-            for (const line of lines) {
-                line[i] = line[i + 1];
-            }
+            line.copyWithin(startX, startX + scrollPixels, endX);
         }
 
         // now we'll assign the frequencies to the end of each line.
         let downSample = Array.from({length: globalSettings.lineCount}, () => 0);
         //      we want to downsample from analyser.freqbincount to linecount
-        const pointsPer = Math.trunc((dataArray.length - 400) / globalSettings.lineCount);
+        const pointsPer = Math.trunc((dataArray.length - 300) / globalSettings.lineCount);
         let currPoints = 0;
         let currIndex = 0;
-        for (let i = 0; i < (dataArray.length - 400); i++) {
+        for (let i = 0; i < (dataArray.length - 300); i++) {
             if (currPoints == pointsPer) {
                 // avg
                 downSample[currIndex] /= pointsPer;
@@ -124,7 +141,7 @@ let dataArray = null;
         }
 
         for (let i = 0; i < lines.length; i++) {
-            lines[i][endX] = downSample[i];
+            lines[i].fill(downSample[i], endX - scrollPixels, endX);
         }
 
 
@@ -179,6 +196,9 @@ let dataArray = null;
      */
     function settingsChanged(scope, id) {
         if (scope === "renderer" || id === "lineCount") {
+            if (id === "scrollSpeed") {
+                return;
+            }
             generateLines();
         }
     }

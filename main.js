@@ -18,6 +18,21 @@ if (ctx === null) {
     throw new Error("Could not create 2D canvas context");
 }
 
+/**
+ * @param {string} id
+ * @param {number} value
+ */
+function setRangeValue(id, value) {
+    const input = document.getElementById(id);
+    
+    if (!(input instanceof HTMLInputElement)) {
+        throw new Error(`Couldn't find range input #${id}`);
+    }
+
+    input.valueAsNumber = value;
+    input.dispatchEvent(new Event("input", {bubbles: true}));
+}
+
 ctx.imageSmoothingEnabled = true;
 
 // ----------- INITIALISATION
@@ -69,6 +84,10 @@ rendererRadioDiv.addEventListener("change", (event) => {
 
     activeRenderer?.destroy?.();
 
+    // change line count and animationfps to better default
+    setRangeValue("animationFps", 10);
+    setRangeValue("lineCount", 80);
+
     if (event.target.value === "procedural") {
         
         // create rendererSettings
@@ -90,11 +109,15 @@ rendererRadioDiv.addEventListener("change", (event) => {
         activeRenderer.initialise();
     }
     else if (event.target.value === "audio") {
-        // fear not because this doesn't change anything yet I think.
+        
         rendererSettings = setupRendererControls(
             audiovisDefinition.controls,
             notifySettingsChange
         );
+        
+        // change line count and animationfps to better default
+        setRangeValue("animationFps", 60);
+        setRangeValue("lineCount", 14);
 
         activeRenderer = createAudioVisualRenderer(
             canvas,

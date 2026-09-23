@@ -5,11 +5,11 @@ export const audiovisDefinition = {
     // a list of controls for the audiovis.
     controls: [
         {
-            id: "FFTTest",
-            label: "Test range (probs FFT rel): ",
+            id: "scrollSpeed",
+            label: "Scroll speed (px per second): ",
             type: "range",
             defaultValue: "20",
-            min: "0",
+            min: "3",
             max: "100"
         }
     ]
