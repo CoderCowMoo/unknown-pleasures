@@ -95,15 +95,15 @@ let dataArray = null;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // antinull field
-        if (analyser === null || dataArray === null) {
+        if (analyser === null || dataArray === null || audioContext === null) {
             return;
         }
 
-        // calc the delta
         if (previousTimeStamp === null) {
             previousTimeStamp = timestamp;
         }
         
+        // calc the delta
         const deltaSeconds = (timestamp - previousTimeStamp) / 1000;
         previousTimeStamp = timestamp;
 
@@ -123,27 +123,31 @@ let dataArray = null;
         }
 
         // now we'll assign the frequencies to the end of each line.
-        let downSample = Array.from({length: globalSettings.lineCount}, () => 0);
-        //      we want to downsample from analyser.freqbincount to linecount
-        const pointsPer = Math.trunc((dataArray.length - 300) / globalSettings.lineCount);
-        let currPoints = 0;
-        let currIndex = 0;
-        for (let i = 0; i < (dataArray.length - 300); i++) {
-            if (currPoints == pointsPer) {
-                // avg
-                downSample[currIndex] /= pointsPer;
-                currIndex++;
-                currPoints = 0;
+        // use logarithmic frequency bands
+        const minFreq = 100;
+        const maxFreq = 12000;
+        // @ts-ignore
+        const binWidth = audioContext?.sampleRate / analyser.fftSize;
+
+        for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+            const lowRatio = lineIndex / lines.length;
+            const highRatio = (lineIndex + 1) / lines.length;
+
+            const lowFreq = minFreq * Math.pow(maxFreq / minFreq, lowRatio);
+
+            const highFreq = minFreq * Math.pow(maxFreq / minFreq, highRatio);
+
+            const firstBin = Math.floor(lowFreq / binWidth);
+            const finalBin = Math.ceil(highFreq / binWidth);
+
+            let magnitude = 0;
+            for (let bin = firstBin; bin < finalBin; bin++) {
+                magnitude += dataArray[bin];
             }
-            // sum
-            downSample[currIndex] += dataArray[i];
-            currPoints++;
-        }
+            magnitude /= (finalBin - firstBin);
 
-        for (let i = 0; i < lines.length; i++) {
-            lines[i].fill(downSample[i], endX - scrollPixels, endX);
+            lines[lineIndex].fill(magnitude, endX - scrollPixels, endX);
         }
-
 
         // draw the lines
         for (let i = 0; i < globalSettings.lineCount; i++) {
